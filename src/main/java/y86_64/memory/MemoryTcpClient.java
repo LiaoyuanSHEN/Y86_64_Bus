@@ -1,6 +1,7 @@
 package y86_64.memory;
 
 import y86_64.Memory;
+import y86_64.TransportUtil;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -46,31 +47,9 @@ public class MemoryTcpClient implements Memory {
         try {
             controlOutputStream.write(READ_FLAG);
             controlOutputStream.flush();
-            controlOutputStream.write((int) (address >> 56));
-            controlOutputStream.write((int) (address >> 48 & 0B0000_0000_0000_0000_0000_0000_0000_1111));
-            controlOutputStream.write((int) (address >> 40 & 0B0000_0000_0000_0000_0000_0000_0000_1111));
-            controlOutputStream.write((int) (address >> 32 & 0B0000_0000_0000_0000_0000_0000_0000_1111));
-            controlOutputStream.write((int) (address >> 24 & 0B0000_0000_0000_0000_0000_0000_0000_1111));
-            controlOutputStream.write((int) (address >> 16 & 0B0000_0000_0000_0000_0000_0000_0000_1111));
-            controlOutputStream.write((int) (address >> 8 & 0B0000_0000_0000_0000_0000_0000_0000_1111));
-            controlOutputStream.write((int) (address & 0B0000_0000_0000_0000_0000_0000_0000_1111));
+            TransportUtil.writeLongToOutputStream(address, controlOutputStream);
             controlOutputStream.flush();
-            long value = dataInputStream.read();
-            value <<= 8;
-            value &= dataInputStream.read();
-            value <<= 8;
-            value &= dataInputStream.read();
-            value <<= 8;
-            value &= dataInputStream.read();
-            value <<= 8;
-            value &= dataInputStream.read();
-            value <<= 8;
-            value &= dataInputStream.read();
-            value <<= 8;
-            value &= dataInputStream.read();
-            value <<= 8;
-            value &= dataInputStream.read();
-            return value;
+            return TransportUtil.readLongFromInputStream(dataInputStream);
         } catch (IOException e) {
             throw new IllegalStateException(e);
         }
@@ -81,23 +60,9 @@ public class MemoryTcpClient implements Memory {
         try {
             controlOutputStream.write(WRITE_FLAG);
             controlOutputStream.flush();
-            controlOutputStream.write((int) (address >> 56));
-            controlOutputStream.write((int) (address >> 48 & 0B0000_0000_0000_0000_0000_0000_0000_1111));
-            controlOutputStream.write((int) (address >> 40 & 0B0000_0000_0000_0000_0000_0000_0000_1111));
-            controlOutputStream.write((int) (address >> 32 & 0B0000_0000_0000_0000_0000_0000_0000_1111));
-            controlOutputStream.write((int) (address >> 24 & 0B0000_0000_0000_0000_0000_0000_0000_1111));
-            controlOutputStream.write((int) (address >> 16 & 0B0000_0000_0000_0000_0000_0000_0000_1111));
-            controlOutputStream.write((int) (address >> 8 & 0B0000_0000_0000_0000_0000_0000_0000_1111));
-            controlOutputStream.write((int) (address & 0B0000_0000_0000_0000_0000_0000_0000_1111));
+            TransportUtil.writeLongToOutputStream(address, controlOutputStream);
             controlOutputStream.flush();
-            dataOutputStream.write((int) (value >> 56));
-            dataOutputStream.write((int) (value >> 48 & 0B0000_0000_0000_0000_0000_0000_0000_1111));
-            dataOutputStream.write((int) (value >> 40 & 0B0000_0000_0000_0000_0000_0000_0000_1111));
-            dataOutputStream.write((int) (value >> 32 & 0B0000_0000_0000_0000_0000_0000_0000_1111));
-            dataOutputStream.write((int) (value >> 24 & 0B0000_0000_0000_0000_0000_0000_0000_1111));
-            dataOutputStream.write((int) (value >> 16 & 0B0000_0000_0000_0000_0000_0000_0000_1111));
-            dataOutputStream.write((int) (value >> 8 & 0B0000_0000_0000_0000_0000_0000_0000_1111));
-            dataOutputStream.write((int) (value & 0B0000_0000_0000_0000_0000_0000_0000_1111));
+            TransportUtil.writeLongToOutputStream(value, dataOutputStream);
             dataOutputStream.flush();
         } catch (IOException e) {
             throw new IllegalStateException(e);
