@@ -6,7 +6,9 @@ import y86_64.exceptions.MemoryOutOfBoundException;
 
 public class MemoryConst {
 
-    public static final int CONTROL_PORT = 15616;
+    public static final int CONTROL_PORT = 11341;
+    public static final int DATA_PORT = 11342;
+    public static final int ADDRESS_PORT = 11343;
     public static final int WRITE_FLAG = 1;
     public static final int READ_FLAG = 2;
 

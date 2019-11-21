@@ -1,7 +1,8 @@
 package y86_64.memory;
 
 import y86_64.Memory;
-import y86_64.TransportUtil;
+import y86_64.bus.TcpBus;
+import y86_64.bus.TransportUtil;
 import y86_64.exceptions.MemoryException;
 import y86_64.util.SneakyThrow;
 
@@ -20,87 +21,77 @@ public class MemoryTcpServer implements Runnable {
 
     private final ServerSocket serverControlSocket;
     private final ServerSocket serverDataSocket;
+    private final ServerSocket serverAddressSocket;
     private final Memory memory;
     private final Map<Processor, Thread> processors = new HashMap<>();
-    private boolean isRunning = false;
+    private boolean running = false;
 
-    public MemoryTcpServer(int port, Memory memory) throws IOException {
+    public MemoryTcpServer(Memory memory) throws IOException {
         this.memory = memory;
         serverControlSocket = new ServerSocket(CONTROL_PORT);
-        serverDataSocket = new ServerSocket(port);
+        serverDataSocket = new ServerSocket(DATA_PORT);
+        serverAddressSocket = new ServerSocket(ADDRESS_PORT);
     }
 
     public void stop() {
-        isRunning = false;
+        running = false;
         processors.values().forEach(Thread::interrupt);
     }
 
     @Override
     public void run() {
-        isRunning = true;
-        while (isRunning) {
+        running = true;
+        while (running) {
             try {
-                Processor processor = new Processor(serverControlSocket.accept(), serverDataSocket.accept());
+                Processor processor = new Processor(serverControlSocket.accept(), serverDataSocket.accept(), serverAddressSocket.accept());
                 Thread thread = new Thread(processor);
                 thread.start();
                 processors.put(processor, thread);
             } catch (IOException e) {
                 SneakyThrow.sneakyThrow(e);
+                break;
             }
         }
     }
 
     private class Processor implements Runnable {
 
-        private final Socket controlSocket;
-        private final Socket dataSocket;
-        private final InputStream controlInputStream;
-        private final OutputStream controlOutputStream;
-        private final InputStream dataInputStream;
-        private final OutputStream dataOutputStream;
+        private final TcpBus controlBus;
+        private final TcpBus dataBus;
+        private final TcpBus addressBus;
 
-        private Processor(Socket controlSocket, Socket dataSocket) throws IOException {
-            this.controlSocket = controlSocket;
-            this.dataSocket = dataSocket;
-            controlInputStream = controlSocket.getInputStream();
-            controlOutputStream = controlSocket.getOutputStream();
-            dataInputStream = dataSocket.getInputStream();
-            dataOutputStream = dataSocket.getOutputStream();
+        private Processor(Socket controlSocket, Socket dataSocket, Socket addressSocket) throws IOException {
+            controlBus = new TcpBus(controlSocket);
+            dataBus = new TcpBus(dataSocket);
+            addressBus = new TcpBus(addressSocket);
         }
 
         @Override
         public void run() {
             try {
                 try {
-                    memory.init(controlInputStream.read());
+                    memory.init(controlBus.readValue());
                 } catch (MemoryException e) {
-                    TransportUtil.writeLongToOutputStream(toExceptionCode(e), controlOutputStream);
-                    controlOutputStream.flush();
+                    controlBus.writeValue(toExceptionCode(e));
                     // log error
                     return;
                 }
-                while (isRunning && controlSocket.isConnected() && dataSocket.isConnected()) {
+                while (running && controlBus.isConnected() && dataBus.isConnected() && addressBus.isConnected()) {
                     try {
-                        int controlCode = controlInputStream.read();
-                        switch (controlCode) {
+                        long controlCode = controlBus.readValue();
+                        switch ((int) controlCode) {
                             case READ_FLAG:
-                                long value = memory.read(TransportUtil.readLongFromInputStream(controlInputStream));
-                                TransportUtil.writeLongToOutputStream(value, dataOutputStream);
-                                dataOutputStream.flush();
+                                long value = memory.read(addressBus.readValue());
+                                dataBus.writeValue(value);
                                 break;
                             case WRITE_FLAG:
-                                memory.write(TransportUtil.readLongFromInputStream(controlInputStream), TransportUtil.readLongFromInputStream(dataInputStream));
-                                TransportUtil.writeLongToOutputStream(NO_ERROR, controlOutputStream);
-                                controlOutputStream.flush();
+                                memory.write(addressBus.readValue(), dataBus.readValue());
                                 break;
                             default:
                                 throw new IllegalArgumentException("Unrecognized controlCode: " + controlCode);
                         }
                     } catch (MemoryException e) {
-                        TransportUtil.writeLongToOutputStream(toExceptionCode(e), controlOutputStream);
-                    } finally {
-                        controlOutputStream.flush();
-                        dataOutputStream.flush();
+                        controlBus.writeValue(toExceptionCode(e));
                     }
                 }
             } catch (InterruptedIOException e) {
@@ -114,32 +105,17 @@ public class MemoryTcpServer implements Runnable {
 
         private void closeResources() {
             try {
-                controlInputStream.close();
+                controlBus.close();
             } catch (IOException e) {
                 SneakyThrow.sneakyThrow(e);
             }
             try {
-                controlOutputStream.close();
+                addressBus.close();
             } catch (IOException e) {
                 SneakyThrow.sneakyThrow(e);
             }
             try {
-                controlSocket.close();
-            } catch (IOException e) {
-                SneakyThrow.sneakyThrow(e);
-            }
-            try {
-                dataInputStream.close();
-            } catch (IOException e) {
-                SneakyThrow.sneakyThrow(e);
-            }
-            try {
-                dataOutputStream.close();
-            } catch (IOException e) {
-                SneakyThrow.sneakyThrow(e);
-            }
-            try {
-                dataSocket.close();
+                dataBus.close();
             } catch (IOException e) {
                 SneakyThrow.sneakyThrow(e);
             }

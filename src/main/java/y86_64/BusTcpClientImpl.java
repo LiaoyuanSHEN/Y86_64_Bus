@@ -13,13 +13,13 @@ import java.util.List;
 import static y86_64.BusConst.*;
 
 public class BusTcpClientImpl implements Bus {
-    private MemoryTcpServer memoryTcpServer;
+    private MemoryTcpServer memoryTcpServer = null;
     private List<Thread> threads = new LinkedList<>();
 
     @Override
     public void registerMemory(Memory memory) {
         try {
-            memoryTcpServer = new MemoryTcpServer(MEMORY_LISTEN_PORT, memory);
+            memoryTcpServer = new MemoryTcpServer(memory);
             Thread thread = new Thread(memoryTcpServer);
             thread.start();
             threads.add(thread);
@@ -36,7 +36,7 @@ public class BusTcpClientImpl implements Bus {
     @Override
     public Memory getMemory() {
         try {
-            return new MemoryTcpClient(MEMORY_LISTEN_PORT);
+            return new MemoryTcpClient();
         } catch (IOException e) {
             throw new IllegalStateException(e);
         }
@@ -45,5 +45,12 @@ public class BusTcpClientImpl implements Bus {
     @Override
     public CPU getCPU() {
         return null;
+    }
+
+    @Override
+    public void stop() {
+        if (memoryTcpServer != null) {
+            memoryTcpServer.stop();
+        }
     }
 }

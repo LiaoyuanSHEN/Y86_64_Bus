@@ -1,7 +1,6 @@
-package y86_64.memory;
+package y86_64;
 
 import y86_64.Bus;
-import y86_64.BusTcpClientImpl;
 import y86_64.Memory;
 import y86_64.exceptions.MemoryException;
 
@@ -15,7 +14,7 @@ public class MemoryServerTest {
     static class MemoryMock implements Memory {
 
         @Override
-        public void init(int component) throws MemoryException {
+        public void init(long component) throws MemoryException {
             System.out.println(component);
         }
 

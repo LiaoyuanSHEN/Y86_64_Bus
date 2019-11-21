@@ -1,4 +1,4 @@
-package y86_64;
+package y86_64.bus;
 
 import java.io.IOException;
 import java.io.InputStream;

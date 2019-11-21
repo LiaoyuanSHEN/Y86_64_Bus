@@ -1,4 +1,4 @@
-package y86_64.memory;
+package y86_64;
 
 import y86_64.Bus;
 import y86_64.BusTcpClientImpl;

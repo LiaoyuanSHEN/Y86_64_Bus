@@ -1,7 +1,7 @@
 package y86_64.memory;
 
 import y86_64.Memory;
-import y86_64.TransportUtil;
+import y86_64.bus.TcpBus;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -12,31 +12,24 @@ import static y86_64.memory.MemoryConst.*;
 
 public class MemoryTcpClient implements Memory {
 
-    private final Socket controlClient;
-    private final Socket dataClient;
-    private final InputStream controlInputStream;
-    private final OutputStream controlOutputStream;
-    private final InputStream dataInputStream;
-    private final OutputStream dataOutputStream;
+    private final TcpBus controlBus;
+    private final TcpBus dataBus;
+    private final TcpBus addressBus;
 
-    public MemoryTcpClient(int port) throws IOException {
-        this("localhost", port);
+    public MemoryTcpClient() throws IOException {
+        this("localhost");
     }
 
-    public MemoryTcpClient(String host, int port) throws IOException {
-        controlClient = new Socket(host, CONTROL_PORT);
-        dataClient = new Socket(host, port);
-        controlInputStream = controlClient.getInputStream();
-        controlOutputStream = controlClient.getOutputStream();
-        dataInputStream = dataClient.getInputStream();
-        dataOutputStream = dataClient.getOutputStream();
+    public MemoryTcpClient(String host) throws IOException {
+        controlBus = new TcpBus(new Socket(host, CONTROL_PORT));
+        dataBus = new TcpBus(new Socket(host, DATA_PORT));
+        addressBus = new TcpBus(new Socket(host, ADDRESS_PORT));
     }
 
     @Override
-    public void init(int component) {
+    public void init(long component) {
         try {
-            controlOutputStream.write(component);
-            controlOutputStream.flush();
+            controlBus.writeValue(component);
         } catch (IOException e) {
             throw new IllegalStateException(e);
         }
@@ -45,11 +38,9 @@ public class MemoryTcpClient implements Memory {
     @Override
     public long read(long address) {
         try {
-            controlOutputStream.write(READ_FLAG);
-            controlOutputStream.flush();
-            TransportUtil.writeLongToOutputStream(address, controlOutputStream);
-            controlOutputStream.flush();
-            return TransportUtil.readLongFromInputStream(dataInputStream);
+            controlBus.writeValue(READ_FLAG);
+            addressBus.writeValue(address);
+            return dataBus.readValue();
         } catch (IOException e) {
             throw new IllegalStateException(e);
         }
@@ -58,12 +49,9 @@ public class MemoryTcpClient implements Memory {
     @Override
     public void write(long address, long value) {
         try {
-            controlOutputStream.write(WRITE_FLAG);
-            controlOutputStream.flush();
-            TransportUtil.writeLongToOutputStream(address, controlOutputStream);
-            controlOutputStream.flush();
-            TransportUtil.writeLongToOutputStream(value, dataOutputStream);
-            dataOutputStream.flush();
+            controlBus.writeValue(READ_FLAG);
+            addressBus.writeValue(address);
+            dataBus.writeValue(value);
         } catch (IOException e) {
             throw new IllegalStateException(e);
         }
