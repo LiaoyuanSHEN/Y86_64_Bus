@@ -1,4 +1,4 @@
-package y86_64;
+package y86_64.bus;
 
 public class BusConst {
 

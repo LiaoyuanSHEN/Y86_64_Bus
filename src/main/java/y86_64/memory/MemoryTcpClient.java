@@ -7,6 +7,11 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.Socket;
+import java.util.Collection;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Objects;
+import java.util.stream.Collectors;
 
 import static y86_64.memory.MemoryConst.*;
 
@@ -57,4 +62,15 @@ public class MemoryTcpClient implements Memory {
         }
     }
 
+    @Override
+    public void stop() {
+        Collection<Exception> exceptions = new LinkedList<>();
+        exceptions.add(controlBus.close());
+        exceptions.add(addressBus.close());
+        exceptions.add(dataBus.close());
+        exceptions = exceptions.stream().filter(Objects::nonNull).collect(Collectors.toList());
+        if (exceptions.size() > 0) {
+            throw new IllegalStateException(exceptions.toString());
+        }
+    }
 }

@@ -30,10 +30,15 @@ public class TcpBus {
         return socket.isConnected();
     }
 
-    public void close() throws IOException {
+    public IOException close() {
         if (socket.isConnected()) {
-            socket.close();
+            try {
+                socket.close();
+            } catch (IOException e) {
+                return e;
+            }
         }
+        return null;
     }
 
 }
