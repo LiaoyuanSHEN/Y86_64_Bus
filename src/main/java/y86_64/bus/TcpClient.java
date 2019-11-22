@@ -12,6 +12,6 @@ public abstract class TcpClient<C extends Component> {
         this.component = component;
     }
 
-    abstract void stop() throws IOException;
+    public abstract void stop() throws IOException;
 
 }

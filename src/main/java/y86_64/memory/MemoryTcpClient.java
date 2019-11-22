@@ -2,16 +2,10 @@ package y86_64.memory;
 
 import y86_64.Memory;
 import y86_64.bus.TcpBus;
+import y86_64.bus.TransportUtil;
 
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
 import java.net.Socket;
-import java.util.Collection;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Objects;
-import java.util.stream.Collectors;
 
 import static y86_64.memory.MemoryConst.*;
 
@@ -29,6 +23,7 @@ public class MemoryTcpClient implements Memory {
         controlBus = new TcpBus(new Socket(host, CONTROL_PORT));
         dataBus = new TcpBus(new Socket(host, DATA_PORT));
         addressBus = new TcpBus(new Socket(host, ADDRESS_PORT));
+        Runtime.getRuntime().addShutdownHook(new Thread(this::stop));
     }
 
     @Override
@@ -36,6 +31,7 @@ public class MemoryTcpClient implements Memory {
         try {
             controlBus.writeValue(component);
         } catch (IOException e) {
+            stop();
             throw new IllegalStateException(e);
         }
     }
@@ -47,6 +43,7 @@ public class MemoryTcpClient implements Memory {
             addressBus.writeValue(address);
             return dataBus.readValue();
         } catch (IOException e) {
+            stop();
             throw new IllegalStateException(e);
         }
     }
@@ -54,23 +51,17 @@ public class MemoryTcpClient implements Memory {
     @Override
     public void write(long address, long value) {
         try {
-            controlBus.writeValue(READ_FLAG);
+            controlBus.writeValue(WRITE_FLAG);
             addressBus.writeValue(address);
             dataBus.writeValue(value);
         } catch (IOException e) {
+            stop();
             throw new IllegalStateException(e);
         }
     }
 
     @Override
     public void stop() {
-        Collection<Exception> exceptions = new LinkedList<>();
-        exceptions.add(controlBus.close());
-        exceptions.add(addressBus.close());
-        exceptions.add(dataBus.close());
-        exceptions = exceptions.stream().filter(Objects::nonNull).collect(Collectors.toList());
-        if (exceptions.size() > 0) {
-            throw new IllegalStateException(exceptions.toString());
-        }
+        TransportUtil.closeResourcesWithWrappedExceptions("close", controlBus, addressBus, dataBus);
     }
 }

@@ -5,7 +5,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.Socket;
 
-public class TcpBus {
+public class TcpBus implements AutoCloseable {
 
     private final Socket socket;
     private final InputStream inputStream;
@@ -30,15 +30,11 @@ public class TcpBus {
         return socket.isConnected();
     }
 
-    public IOException close() {
+    @Override
+    public void close() throws IOException {
         if (socket.isConnected()) {
-            try {
-                socket.close();
-            } catch (IOException e) {
-                return e;
-            }
+            socket.close();
         }
-        return null;
     }
 
 }

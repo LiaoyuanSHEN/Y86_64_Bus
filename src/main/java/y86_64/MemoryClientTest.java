@@ -10,7 +10,6 @@ public class MemoryClientTest {
         memory.init(0);
         System.out.println(memory.read(123));
         memory.write(123, 456);
-
     }
 
 }

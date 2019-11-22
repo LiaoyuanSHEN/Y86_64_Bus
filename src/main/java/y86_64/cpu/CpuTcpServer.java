@@ -21,4 +21,9 @@ public class CpuTcpServer extends TcpServer<CPU> {
 
     }
 
+    @Override
+    public boolean isRunning() {
+        return false;
+    }
+
 }

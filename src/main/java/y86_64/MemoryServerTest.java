@@ -7,6 +7,7 @@ public class MemoryServerTest {
 
     public static void main(String[] args) {
         Bus bus = BusFactory.getBus();
+        bus.registerComponent(ComponentId.MEMORY, new MemoryMock());
     }
 
     static class MemoryMock implements Memory {

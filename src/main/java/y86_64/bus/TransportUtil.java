@@ -3,10 +3,17 @@ package y86_64.bus;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.lang.reflect.Method;
+import java.util.Arrays;
+import java.util.LinkedList;
+import java.util.List;
 
 public class TransportUtil {
 
     private static final long MASK = 0B1111_1111;
+
+    private TransportUtil() {
+    }
 
     public static void writeLongToOutputStream(long value, OutputStream out) throws IOException {
         out.write((int) (value >> 56));
@@ -38,4 +45,20 @@ public class TransportUtil {
         return value;
     }
 
+    public static void closeResourcesWithWrappedExceptions(String methodName, Object... resources) {
+        List<Exception> exceptions = new LinkedList<>();
+        for (Object resource : resources) {
+            try {
+                Method method = resource.getClass().getDeclaredMethod(methodName);
+                method.invoke(resource);
+            } catch (NoSuchMethodException e) {
+                throw new IllegalArgumentException("Not found method by name \"" + methodName + "\" in class: " + resource.getClass().getName());
+            } catch (Exception e) {
+                exceptions.add(e);
+            }
+        }
+        if(!exceptions.isEmpty()) {
+            throw new IllegalStateException(exceptions.toString());
+        }
+    }
 }

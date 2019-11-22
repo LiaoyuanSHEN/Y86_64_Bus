@@ -1,17 +1,15 @@
 package y86_64.memory;
 
 import y86_64.Memory;
-import y86_64.bus.TcpBus;
 import y86_64.bus.TcpServer;
-import y86_64.exceptions.MemoryException;
+import y86_64.bus.TransportUtil;
 import y86_64.util.SneakyThrow;
 
 import java.io.IOException;
 import java.io.InterruptedIOException;
 import java.net.ServerSocket;
-import java.net.Socket;
-import java.util.*;
-import java.util.stream.Collectors;
+import java.util.LinkedList;
+import java.util.List;
 
 import static y86_64.memory.MemoryConst.*;
 
@@ -20,7 +18,7 @@ public class MemoryTcpServer extends TcpServer<Memory> {
     private final ServerSocket controlServerSocket;
     private final ServerSocket dataServerSocket;
     private final ServerSocket addressServerSocket;
-    private final Map<Processor, Thread> processors = new HashMap<>();
+    private final List<MemoryTcpServerSocketProcessor> processors = new LinkedList<>();
     private Thread serverThread = null;
     private boolean running = false;
 
@@ -32,22 +30,25 @@ public class MemoryTcpServer extends TcpServer<Memory> {
     }
 
     @Override
-    public void start() {
+    public synchronized void start() {
         running = true;
         serverThread = new Thread(() -> {
             while (running) {
                 try {
-                    Processor processor = new Processor(controlServerSocket.accept(), dataServerSocket.accept(), addressServerSocket.accept());
-                    Thread thread = new Thread(processor);
-                    thread.start();
-                    processors.put(processor, thread);
+                    MemoryTcpServerSocketProcessor processor = new MemoryTcpServerSocketProcessor(
+                            component,
+                            this,
+                            controlServerSocket.accept(),
+                            dataServerSocket.accept(),
+                            addressServerSocket.accept());
+                    processor.run();
+                    processors.add(processor);
                 } catch (InterruptedIOException e) {
                     // log interrupt
-                } catch (IOException e) {
-                    SneakyThrow.sneakyThrow(e);
-                    break;
-                } finally {
                     stop();
+                } catch (IOException e) {
+                    stop();
+                    SneakyThrow.sneakyThrow(e);
                 }
             }
         });
@@ -57,85 +58,16 @@ public class MemoryTcpServer extends TcpServer<Memory> {
     @Override
     public void stop() {
         running = false;
-        serverThread.interrupt();
-        try {
-            controlServerSocket.close();
-        } catch (IOException e) {
-            SneakyThrow.sneakyThrow(e);
+        if (!serverThread.isInterrupted()) {
+            serverThread.interrupt();
         }
-        try {
-            dataServerSocket.close();
-        } catch (IOException e) {
-            SneakyThrow.sneakyThrow(e);
-        }
-        try {
-            addressServerSocket.close();
-        } catch (IOException e) {
-            SneakyThrow.sneakyThrow(e);
-        }
-        processors.values().forEach(Thread::interrupt);
+        processors.forEach(MemoryTcpServerSocketProcessor::close);
+        TransportUtil.closeResourcesWithWrappedExceptions("close", controlServerSocket, dataServerSocket, addressServerSocket);
     }
 
-    private class Processor implements Runnable {
-
-        private final TcpBus controlBus;
-        private final TcpBus dataBus;
-        private final TcpBus addressBus;
-
-        private Processor(Socket controlSocket, Socket dataSocket, Socket addressSocket) throws IOException {
-            controlBus = new TcpBus(controlSocket);
-            dataBus = new TcpBus(dataSocket);
-            addressBus = new TcpBus(addressSocket);
-        }
-
-        @Override
-        public void run() {
-            try {
-                try {
-                    component.init(controlBus.readValue());
-                } catch (MemoryException e) {
-                    controlBus.writeValue(toExceptionCode(e));
-                    // log error
-                    return;
-                }
-                while (running && controlBus.isConnected() && dataBus.isConnected() && addressBus.isConnected()) {
-                    try {
-                        long controlCode = controlBus.readValue();
-                        switch ((int) controlCode) {
-                            case READ_FLAG:
-                                long value = component.read(addressBus.readValue());
-                                dataBus.writeValue(value);
-                                break;
-                            case WRITE_FLAG:
-                                component.write(addressBus.readValue(), dataBus.readValue());
-                                break;
-                            default:
-                                throw new IllegalArgumentException("Unrecognized controlCode: " + controlCode);
-                        }
-                    } catch (MemoryException e) {
-                        controlBus.writeValue(toExceptionCode(e));
-                    }
-                }
-            } catch (InterruptedIOException e) {
-                // log interrupt
-            } catch (IOException e) {
-                throw new IllegalStateException(e);
-            } finally {
-                closeResources();
-            }
-        }
-
-        private void closeResources() {
-            Collection<Exception> exceptions = new LinkedList<>();
-            exceptions.add(controlBus.close());
-            exceptions.add(addressBus.close());
-            exceptions.add(dataBus.close());
-            exceptions = exceptions.stream().filter(Objects::nonNull).collect(Collectors.toList());
-            if (exceptions.size() > 0) {
-                throw new IllegalStateException(exceptions.toString());
-            }
-        }
-
+    @Override
+    public boolean isRunning() {
+        return running;
     }
 
 }
