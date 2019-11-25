@@ -1,10 +1,10 @@
 package y86_64.bus;
 
+import y86_64.Closeable;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.lang.reflect.Method;
-import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -45,19 +45,16 @@ public class TransportUtil {
         return value;
     }
 
-    public static void closeResourcesWithWrappedExceptions(String methodName, Object... resources) {
+    public static void closeResourcesWithWrappedExceptions(Closeable... resources) {
         List<Exception> exceptions = new LinkedList<>();
-        for (Object resource : resources) {
+        for (Closeable resource : resources) {
             try {
-                Method method = resource.getClass().getDeclaredMethod(methodName);
-                method.invoke(resource);
-            } catch (NoSuchMethodException e) {
-                throw new IllegalArgumentException("Not found method by name \"" + methodName + "\" in class: " + resource.getClass().getName());
+                resource.stop();
             } catch (Exception e) {
                 exceptions.add(e);
             }
         }
-        if(!exceptions.isEmpty()) {
+        if (!exceptions.isEmpty()) {
             throw new IllegalStateException(exceptions.toString());
         }
     }

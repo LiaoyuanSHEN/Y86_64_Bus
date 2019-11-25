@@ -1,6 +1,7 @@
 package y86_64.bus;
 
 import y86_64.Bus;
+import y86_64.Closeable;
 import y86_64.Component;
 import y86_64.bus.factory.ComponentTcpFactory;
 
@@ -10,13 +11,13 @@ import java.util.List;
 
 public class BusTcpImpl implements Bus {
 
-    private final List<TcpServer> tcpServers = new LinkedList<>();
+    private final List<Closeable> tcpServers = new LinkedList<>();
 
     @Override
     public void registerComponent(long componentId, Component component) {
         try {
             TcpServer tcpServer = ComponentTcpFactory.getTcpServer(componentId, component);
-            tcpServer.start();
+            tcpServer.run();
             tcpServers.add(tcpServer);
         } catch (IOException e) {
             throw new IllegalStateException(e);
@@ -30,7 +31,6 @@ public class BusTcpImpl implements Bus {
 
     @Override
     public void stop() {
-        TransportUtil.closeResourcesWithWrappedExceptions("stop", tcpServers.toArray());
+        TransportUtil.closeResourcesWithWrappedExceptions(tcpServers.toArray(new Closeable[0]));
     }
-
 }

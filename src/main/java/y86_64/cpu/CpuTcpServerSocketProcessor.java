@@ -1,24 +1,23 @@
-package y86_64.memory;
+package y86_64.cpu;
 
-import y86_64.Memory;
+import y86_64.CPU;
 import y86_64.bus.ComponentControlCodeProcessor;
 import y86_64.bus.TcpBus;
 import y86_64.bus.TcpServerSocketProcessor;
-import y86_64.exceptions.MemoryException;
+import y86_64.exceptions.CpuException;
 
 import java.io.IOException;
 import java.net.Socket;
 
 import static y86_64.bus.BusConst.*;
 
-public class MemoryTcpServerSocketProcessor extends TcpServerSocketProcessor<Memory> {
+public class CpuTcpServerSocketProcessor extends TcpServerSocketProcessor<CPU> {
 
-    public MemoryTcpServerSocketProcessor(Memory memory, MemoryTcpServer memoryTcpServer, Socket controlSocket, Socket dataSocket, Socket addressSocket) throws IOException {
-        component = memory;
-        tcpServer = memoryTcpServer;
+    public CpuTcpServerSocketProcessor(CPU cpu, CpuTcpServer server, Socket controlSocket, Socket dataSocket) throws IOException {
+        component = cpu;
+        tcpServer = server;
         tcpBuses[CONTROL_BUS_INDEX] = new TcpBus(controlSocket);
         tcpBuses[DATA_BUS_INDEX] = new TcpBus(dataSocket);
-        tcpBuses[ADDRESS_BUS_INDEX] = new TcpBus(addressSocket);
     }
 
     @Override
@@ -29,19 +28,18 @@ public class MemoryTcpServerSocketProcessor extends TcpServerSocketProcessor<Mem
                 case CONNECTION_CLOSED:
                     System.out.println("Client connection closed.");
                     return false;
-                case MEMORY_READ_CODE:
-                    long value = component.read(tcpBuses[ADDRESS_BUS_INDEX].readValue());
-                    tcpBuses[DATA_BUS_INDEX].writeValue(value);
+                case CPU_COMPUTE_CODE:
+                    component.compute();
                     break;
-                case MEMORY_WRITE_CODE:
-                    component.write(tcpBuses[ADDRESS_BUS_INDEX].readValue(), tcpBuses[DATA_BUS_INDEX].readValue());
+                case CPU_INTERRUPT_CODE:
+                    component.interrupt(tcpBuses[DATA_BUS_INDEX].readValue());
                     break;
                 default:
                     throw new IllegalArgumentException("Unrecognized controlCode: " + controlCode);
             }
             tcpBuses[CONTROL_BUS_INDEX].writeValue(NO_ERROR);
             return true;
-        } catch (MemoryException e) {
+        } catch (CpuException e) {
             tcpBuses[CONTROL_BUS_INDEX].writeValue(ComponentControlCodeProcessor.toExceptionCode(e));
             return false;
         }

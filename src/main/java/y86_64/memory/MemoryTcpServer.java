@@ -11,7 +11,7 @@ import java.net.ServerSocket;
 import java.util.LinkedList;
 import java.util.List;
 
-import static y86_64.memory.MemoryConst.*;
+import static y86_64.bus.BusConst.*;
 
 public class MemoryTcpServer extends TcpServer<Memory> {
 
@@ -24,13 +24,13 @@ public class MemoryTcpServer extends TcpServer<Memory> {
 
     public MemoryTcpServer(Memory memory) throws IOException {
         super(memory);
-        controlServerSocket = new ServerSocket(CONTROL_PORT);
-        dataServerSocket = new ServerSocket(DATA_PORT);
-        addressServerSocket = new ServerSocket(ADDRESS_PORT);
+        controlServerSocket = new ServerSocket(MEMORY_CONTROL_PORT);
+        dataServerSocket = new ServerSocket(MEMORY_DATA_PORT);
+        addressServerSocket = new ServerSocket(MEMORY_ADDRESS_PORT);
     }
 
     @Override
-    public synchronized void start() {
+    public synchronized void run() {
         running = true;
         serverThread = new Thread(() -> {
             while (running) {
@@ -62,7 +62,7 @@ public class MemoryTcpServer extends TcpServer<Memory> {
             serverThread.interrupt();
         }
         processors.forEach(MemoryTcpServerSocketProcessor::close);
-        TransportUtil.closeResourcesWithWrappedExceptions("close", controlServerSocket, dataServerSocket, addressServerSocket);
+        TransportUtil.closeResourcesWithWrappedExceptions(controlServerSocket::close, dataServerSocket::close, addressServerSocket::close);
     }
 
     @Override
