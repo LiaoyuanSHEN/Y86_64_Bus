@@ -4,7 +4,6 @@ import y86_64.Memory;
 import y86_64.bus.ComponentControlCodeProcessor;
 import y86_64.bus.TcpBus;
 import y86_64.bus.TcpClient;
-import y86_64.bus.TransportUtil;
 import y86_64.exceptions.MemoryException;
 
 import java.io.IOException;

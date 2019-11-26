@@ -13,11 +13,6 @@ public class MemoryServerTest {
     static class MemoryMock implements Memory {
 
         @Override
-        public void init(long component) throws MemoryException {
-            System.out.println(component);
-        }
-
-        @Override
         public long read(long address) throws MemoryException {
             System.out.println(address);
             return address;

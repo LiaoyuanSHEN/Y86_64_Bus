@@ -2,13 +2,10 @@ package y86_64.bus;
 
 import y86_64.Closeable;
 import y86_64.Component;
-import y86_64.exceptions.ComponentException;
 
 import java.io.IOException;
 import java.io.InterruptedIOException;
 import java.util.Arrays;
-
-import static y86_64.bus.BusConst.*;
 
 public abstract class TcpServerSocketProcessor<C extends Component> {
 
@@ -23,14 +20,6 @@ public abstract class TcpServerSocketProcessor<C extends Component> {
         }
         thread = new Thread(() -> {
             try {
-                try {
-                    component.init(tcpBuses[CONTROL_BUS_INDEX].readValue());
-                    tcpBuses[CONTROL_BUS_INDEX].writeValue(NO_ERROR);
-                } catch (ComponentException e) {
-                    tcpBuses[CONTROL_BUS_INDEX].writeValue(COMPONENT_INITIALIZE_EXCEPTION);
-                    // log error
-                    throw new IllegalStateException("Component initial failed.");
-                }
                 while (tcpServer.isRunning() && start()) {
                     // wait for
                 }
