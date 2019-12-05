@@ -2,8 +2,8 @@ package y86_64.cpu;
 
 import y86_64.CPU;
 import y86_64.bus.TcpServer;
-import y86_64.bus.TransportUtil;
 import y86_64.util.SneakyThrow;
+import y86_64.util.TransportUtil;
 
 import java.io.IOException;
 import java.io.InterruptedIOException;
@@ -38,7 +38,7 @@ public class CpuTcpServer extends TcpServer<CPU> {
                             this,
                             controlServerSocket.accept(),
                             dataServerSocket.accept());
-                    processor.run();
+                    processor.start();
                     processors.add(processor);
                 } catch (InterruptedIOException e) {
                     // log interrupt

@@ -2,10 +2,12 @@ package y86_64.bus;
 
 import y86_64.Closeable;
 import y86_64.Component;
+import y86_64.util.TransportUtil;
 
 import java.io.IOException;
 import java.io.InterruptedIOException;
-import java.util.Arrays;
+
+import static java.util.Arrays.stream;
 
 public abstract class TcpServerSocketProcessor<C extends Component> {
 
@@ -14,13 +16,13 @@ public abstract class TcpServerSocketProcessor<C extends Component> {
     protected TcpServer<C> tcpServer;
     protected C component;
 
-    public void run() {
+    public void start() {
         if (thread != null) {
             throw new IllegalStateException("Server socket is already running.");
         }
         thread = new Thread(() -> {
             try {
-                while (tcpServer.isRunning() && start()) {
+                while (tcpServer.isRunning() && run()) {
                     // wait for
                 }
             } catch (InterruptedIOException e) {
@@ -35,9 +37,9 @@ public abstract class TcpServerSocketProcessor<C extends Component> {
     }
 
     public void close() {
-        TransportUtil.closeResourcesWithWrappedExceptions(Arrays.stream(tcpBuses).toArray(Closeable[]::new));
+        TransportUtil.closeResourcesWithWrappedExceptions(stream(tcpBuses).toArray(Closeable[]::new));
     }
 
-    abstract protected boolean start() throws IOException;
+    abstract protected boolean run() throws IOException;
 
 }

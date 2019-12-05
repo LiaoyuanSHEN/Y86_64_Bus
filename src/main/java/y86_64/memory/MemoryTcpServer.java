@@ -2,8 +2,8 @@ package y86_64.memory;
 
 import y86_64.Memory;
 import y86_64.bus.TcpServer;
-import y86_64.bus.TransportUtil;
 import y86_64.util.SneakyThrow;
+import y86_64.util.TransportUtil;
 
 import java.io.IOException;
 import java.io.InterruptedIOException;
@@ -41,7 +41,7 @@ public class MemoryTcpServer extends TcpServer<Memory> {
                             controlServerSocket.accept(),
                             dataServerSocket.accept(),
                             addressServerSocket.accept());
-                    processor.run();
+                    processor.start();
                     processors.add(processor);
                 } catch (InterruptedIOException e) {
                     // log interrupt

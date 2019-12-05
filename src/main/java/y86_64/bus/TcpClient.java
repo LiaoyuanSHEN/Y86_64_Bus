@@ -2,8 +2,9 @@ package y86_64.bus;
 
 import y86_64.Closeable;
 import y86_64.Component;
+import y86_64.util.TransportUtil;
 
-import java.util.Arrays;
+import static java.util.Arrays.stream;
 
 public abstract class TcpClient implements Component {
 
@@ -11,7 +12,7 @@ public abstract class TcpClient implements Component {
 
     @Override
     public void stop() {
-        TransportUtil.closeResourcesWithWrappedExceptions(Arrays.stream(tcpBuses).toArray(Closeable[]::new));
+        TransportUtil.closeResourcesWithWrappedExceptions(stream(tcpBuses).toArray(Closeable[]::new));
     }
 
 }

@@ -21,7 +21,7 @@ public class CpuTcpServerSocketProcessor extends TcpServerSocketProcessor<CPU> {
     }
 
     @Override
-    protected boolean start() throws IOException {
+    protected boolean run() throws IOException {
         try {
             long controlCode = tcpBuses[CONTROL_BUS_INDEX].readValue();
             switch ((int) controlCode) {
