@@ -6,6 +6,7 @@ import y86_64.util.TransportUtil;
 
 import java.io.IOException;
 import java.io.InterruptedIOException;
+import java.net.SocketException;
 
 import static java.util.Arrays.stream;
 
@@ -27,6 +28,8 @@ public abstract class TcpServerSocketProcessor<C extends Component> {
                 }
             } catch (InterruptedIOException e) {
                 // log interrupt
+            } catch (SocketException e) {
+                System.out.println(e.getMessage());
             } catch (IOException e) {
                 throw new IllegalStateException(e);
             } finally {
