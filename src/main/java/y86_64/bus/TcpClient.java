@@ -2,7 +2,6 @@ package y86_64.bus;
 
 import y86_64.Closeable;
 import y86_64.Component;
-import y86_64.util.TransportUtil;
 
 import static java.util.Arrays.stream;
 

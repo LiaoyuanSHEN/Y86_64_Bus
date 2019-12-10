@@ -13,13 +13,13 @@ public class MemoryServerTest {
     static class MemoryMock implements Memory {
 
         @Override
-        public long read(long address) throws MemoryException {
+        public byte readByte(long address) throws MemoryException {
             System.out.println(address);
-            return address;
+            return (byte) address;
         }
 
         @Override
-        public void write(long address, long value) throws MemoryException {
+        public void writeByte(long address, byte value) throws MemoryException {
             System.out.println(address);
             System.out.println(value);
         }

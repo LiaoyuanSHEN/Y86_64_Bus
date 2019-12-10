@@ -1,4 +1,4 @@
-package y86_64.bus.factory;
+package y86_64.bus;
 
 import y86_64.CPU;
 import y86_64.Component;

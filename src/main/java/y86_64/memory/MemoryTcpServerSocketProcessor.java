@@ -30,11 +30,11 @@ public class MemoryTcpServerSocketProcessor extends TcpServerSocketProcessor<Mem
                     System.out.println("Client connection closed.");
                     return false;
                 case MEMORY_READ_CODE:
-                    long value = component.read(tcpBuses[ADDRESS_BUS_INDEX].readValue());
+                    long value = component.readByte(tcpBuses[ADDRESS_BUS_INDEX].readValue());
                     tcpBuses[DATA_BUS_INDEX].writeValue(value);
                     break;
                 case MEMORY_WRITE_CODE:
-                    component.write(tcpBuses[ADDRESS_BUS_INDEX].readValue(), tcpBuses[DATA_BUS_INDEX].readValue());
+                    component.writeByte(tcpBuses[ADDRESS_BUS_INDEX].readValue(), (byte) tcpBuses[DATA_BUS_INDEX].readValue());
                     break;
                 default:
                     throw new IllegalArgumentException("Unrecognized controlCode: " + controlCode);

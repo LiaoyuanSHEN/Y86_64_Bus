@@ -24,12 +24,12 @@ public class MemoryTcpClient extends TcpClient implements Memory {
     }
 
     @Override
-    public long read(long address) throws MemoryException {
+    public byte readByte(long address) throws MemoryException {
         try {
             tcpBuses[CONTROL_BUS_INDEX].writeValue(MEMORY_READ_CODE);
             tcpBuses[ADDRESS_BUS_INDEX].writeValue(address);
             ComponentControlCodeProcessor.handleException(tcpBuses[CONTROL_BUS_INDEX].readValue());
-            return tcpBuses[DATA_BUS_INDEX].readValue();
+            return (byte) tcpBuses[DATA_BUS_INDEX].readValue();
         } catch (MemoryException e) {
             stop();
             throw e;
@@ -40,7 +40,7 @@ public class MemoryTcpClient extends TcpClient implements Memory {
     }
 
     @Override
-    public void write(long address, long value) throws MemoryException {
+    public void writeByte(long address, byte value) throws MemoryException {
         try {
             tcpBuses[CONTROL_BUS_INDEX].writeValue(MEMORY_WRITE_CODE);
             tcpBuses[ADDRESS_BUS_INDEX].writeValue(address);

@@ -1,12 +1,13 @@
 package y86_64.bus;
 
 import y86_64.Closeable;
-import y86_64.util.TransportUtil;
+import y86_64.util.TranslateUtil;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.Socket;
+import java.net.SocketException;
 
 public class TcpBus implements Closeable {
 
@@ -21,11 +22,15 @@ public class TcpBus implements Closeable {
     }
 
     public long readValue() throws IOException {
-        return TransportUtil.readLongFromInputStream(inputStream);
+        byte[] arr = new byte[8];
+        if (inputStream.read(arr) == -1 ) {
+            throw new SocketException("Socket closed.");
+        }
+        return TranslateUtil.fromLongByteArray(arr);
     }
 
     public void writeValue(long value) throws IOException {
-        TransportUtil.writeLongToOutputStream(value, outputStream);
+        outputStream.write(TranslateUtil.toLongByteArray(value));
         outputStream.flush();
     }
 
